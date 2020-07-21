@@ -42,8 +42,8 @@ def welcome():
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/temp/<start><br/>"
-        f"/api/v1.0/temp/<start>/<end><br/>"
+        f"/api/v1.0/start<br/>"
+        f"/api/v1.0/start/end<br/>"
 
     )
 
@@ -151,15 +151,30 @@ def calc_start_temps(start_date):
 #When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive
 
 def start_date(start):
-    calc_start_temp = calc_start_temps(start)
-    temp= list(np.ravel(calc_start_temp))
+    # calc_start_temp = calc_start_temps(start)
+    # temp= list(np.ravel(calc_start_temp))
+    date = start
+    # Tmin = t_temp[0]
+    # Tmax = t_temp[2]
+    # Tavg = t_temp[1]
+    # Tdict = {'Minimum temperature': Tmin, 'Maximum temperature': Tmax, 'Avg temperature': Tavg}
+    # return jsonify(Tdict)
+    
+    sel = [measurement.date, func.min(measurement.tobs), func.avg(measurement.tobs), func.max(measurement.tobs)]
+    results =  (session.query(*sel)
+                       .filter(func.strftime("%Y-%m-%d", measurement.date) >= date)
+                       .group_by(measurement.date)
+                       .all())
+    dates = []                       
+    for result in results:
+        date_dict = {}
+        date_dict["Date"] = result[0]
+        date_dict["Low Temp"] = result[1]
+        date_dict["Avg Temp"] = result[2]
+        date_dict["High Temp"] = result[3]
+        dates.append(date_dict)
+    return jsonify(dates)
 
-    Tmin = t_temp[0]
-    Tmax = t_temp[2]
-    Tavg = t_temp[1]
-    Tdict = {'Minimum temperature': Tmin, 'Maximum temperature': Tmax, 'Avg temperature': Tavg}
-
-    return jsonify(Tdict)
 
 def calc_temps(start_date, end_date):
     """TMIN, TAVG, and TMAX for a list of dates.
@@ -178,16 +193,31 @@ def calc_temps(start_date, end_date):
 @app.route("/api/v1.0/<start>/<end>")
 
 def start_end_date(start, end):
-    
-    calc_temp = calc_temps(start, end)
-    ta_temp= list(np.ravel(calc_temp))
+    # start_date = start
+    # end_date = start
+    # calc_temp = calc_temps(start, end)
+    # ta_temp= list(np.ravel(calc_temp))
 
-    tmin = ta_temp[0]
-    tmax = ta_temp[2]
-    temp_avg = ta_temp[1]
-    temp_dict = { 'Minimum temperature': tmin, 'Maximum temperature': tmax, 'Avg temperature': temp_avg}
-
-    return jsonify(temp_dict)
+    # tmin = ta_temp[0]
+    # tmax = ta_temp[2]
+    # temp_avg = ta_temp[1]
+    # temp_dict = { 'Minimum temperature': tmin, 'Maximum temperature': tmax, 'Avg temperature': temp_avg}
+    sel1 = [measurement.date, func.min(measurement.tobs), func.avg(measurement.tobs), func.max(measurement.tobs)]
+    results1 =  (session.query(*sel1)
+                       .filter(func.strftime("%Y-%m-%d", measurement.date) >= start)
+                       .filter(func.strftime("%Y-%m-%d", measurement.date) < end)
+                       .group_by(measurement.date)
+                       .all())
+    stenddates = []                       
+    for result in results1:
+        date_dict = {}
+        date_dict["Date"] = result[0]
+        date_dict["Low Temp"] = result[1]
+        date_dict["Avg Temp"] = result[2]
+        date_dict["High Temp"] = result[3]
+        stenddates.append(date_dict)
+    return jsonify(stenddates)
+    #return jsonify(temp_dict)
 
 
  
